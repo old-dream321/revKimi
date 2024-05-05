@@ -6,3 +6,8 @@ class CreateFile(Exception):
 class ConfigMissing(Exception):
     """缺少配置项"""
     pass
+
+
+class UnexpectedResponse(Exception):
+    """不正常响应"""
+    pass

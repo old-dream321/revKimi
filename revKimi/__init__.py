@@ -1,3 +1,3 @@
-from revKimi.revKimi.main import *
+from .main import *
 
 __all__ = ["Chatbot"]

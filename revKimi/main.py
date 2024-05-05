@@ -37,54 +37,82 @@ class Chatbot:
         self.config["access_token"] = resp["access_token"]
         self.config["refresh_token"] = resp["refresh_token"]
 
-    def __check_response(self, response: str):
-        try:
-            response_dict = json.loads(response)
-            if response_dict.get("error_type") == "auth.token.invalid":
-                self.__refresh_token()
-        except Exception as e:
-            return
-
     def __request(
             self,
             method: str,
             url: str,
-            json: dict,
             stream: bool = False,
             **kwargs
     ) -> requests.Response:
         resp = requests.request(
             method=method,
             url=url,
-            json=json,
             stream=stream,
             headers=self.__get_header("access_token"),
             **kwargs
         )
         stat_code = resp.status_code
-        if stat_code != 401:
+        if stat_code == 200:
             return resp
         resp_json = resp.json()
         if resp_json.get("error_type") == "auth.token.invalid":
+            # token过期
             self.__refresh_token()
             return requests.request(
                 method=method,
                 url=url,
-                json=json,
                 stream=stream,
                 headers=self.__get_header("access_token"),
                 **kwargs
             )
+        else:
+            raise UnexpectedResponse(str(resp_json))
 
-    def create_conversation(self, name: str) -> dict:
+    def create_conversation(self, name: str = "未命名会话") -> dict:
         """创建会话"""
         resp = self.__request(
-            method="GET",
+            method="POST",
             url=self.api_base + "/chat",
             json={
                 "name": f"{name}",
                 "is_example": False,
                 "born_from": ""
+            }
+        ).json()
+        return resp
+
+    def delete_conversation(self, conversation_id: str) -> None:
+        """删除会话"""
+        self.__request(
+            method="DELETE",
+            url=self.api_base + f"/chat/{conversation_id}"
+        )
+
+    def get_conversations(self, size: int = 30) -> dict:
+        """获取会话列表
+        :param size: 最多获取条数（默认30）
+        """
+        resp = self.__request(
+            method="POST",
+            url=self.api_base + "/chat/list",
+            json={
+                "kimiplus_id": "",
+                "offset": 0,
+                "size": size
+            }
+        ).json()
+        return resp
+
+    def get_history(self, conversation_id: str, last: int = 50):
+        """获取会话历史
+        :param conversation_id: 会话ID
+        :param last: 历史条数（默认50）
+        """
+        resp = self.__request(
+            method="POST",
+            url=self.api_base + f"/chat/{conversation_id}/segment/scroll",
+            json={
+                "last": last
             }
         ).json()
         return resp
@@ -105,7 +133,7 @@ class Chatbot:
 
         """
         if not conversation_id:
-            conversation_id = self.create_conversation("未命名")["id"]
+            conversation_id = self.create_conversation()["id"]
         resp = self.__request(
             method="POST",
             url=self.api_base + f"/chat/{conversation_id}/completion/stream",
@@ -121,14 +149,23 @@ class Chatbot:
                 "use_search": use_search
             }
         )
+        reply_text = ""
         for chunk in resp.iter_lines():
             try:
                 if chunk:
+                    # 非空chunk
                     chunk = chunk.decode("utf-8")
                     if not chunk.endswith("}"):
+                        # 不完整
                         continue
                     chunk_json = json.loads(chunk[6:])
-                    yield chunk_json
+                    if chunk_json.get("event") == "cmpl":
+                        reply_text += chunk_json.get("text")
+                        result = {
+                            "conversation_id": conversation_id,
+                            "text": reply_text
+                        }
+                        yield result
             except Exception as e:
                 pass
 
@@ -150,18 +187,15 @@ class Chatbot:
 
         """
         resp_generator = self.__stream_ask(
-            prompt,
-            conversation_id,
-            timeout,
-            use_search
-        )
+                            prompt,
+                            conversation_id,
+                            timeout,
+                            use_search
+                        )
         if stream:
             return resp_generator
         else:
-            content = ""
+            result = None
             for chunk in resp_generator:
-                if chunk.get("event") == "cmpl":
-                    content += chunk.get("text")
-            return {
-                "text": content
-            }
+                result = chunk
+            return result
