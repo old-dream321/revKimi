@@ -103,7 +103,7 @@ class Chatbot:
         ).json()
         return resp
 
-    def get_history(self, conversation_id: str, last: int = 50):
+    def get_history(self, conversation_id: str, last: int = 50) -> dict:
         """获取会话历史
         :param conversation_id: 会话ID
         :param last: 历史条数（默认50）
