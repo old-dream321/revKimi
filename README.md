@@ -16,13 +16,14 @@ pip install revKimi --upgrade
 
 ### 配置文件可由以下两种方式提供：
 
-#### 1. 使用默认的文件对象，只需传入`file_path`
+#### 1. 使用默认的文件对象，只需传入`config_path`
 ```python
 from revKimi import Chatbot
 
 chatbot = Chatbot(config_path="./config.json")
 ```
-`file_path`为JSON配置文件路径，若不填则默认"./config.json"，若无配置文件会自动创建
+
+`config_path`为JSON配置文件路径，若不填则默认"./config.json"，若无配置文件会自动创建
 **配置参数寻找方法如下图**
 ![](.github/resources/steps.png)
 
@@ -55,6 +56,8 @@ with open("test.txt", "rb") as f:
 ```
 
 # 响应示例
+
+```json
 resp = {
     'conversation_id': 'coroksr5cfui11n4gql0', 
     'text': '你好！很高兴和你交流。有什么我可以帮你的吗？'
