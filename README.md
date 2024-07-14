@@ -19,7 +19,8 @@ pip install revKimi --upgrade
 #### 1. 使用默认的文件对象，只需传入`file_path`
 ```python
 from revKimi import Chatbot
-chatbot = Chatbot(file_path)
+
+chatbot = Chatbot(file_path="./config.json")
 ```
 `file_path`为JSON配置文件路径，若不填则默认"./config.json"，若无配置文件会自动创建
 **配置参数寻找方法如下图**
