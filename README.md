@@ -58,9 +58,9 @@ with open("test.txt", "rb") as f:
 # 响应示例
 
 ```json
-resp = {
-    'conversation_id': 'coroksr5cfui11n4gql0', 
-    'text': '你好！很高兴和你交流。有什么我可以帮你的吗？'
+{
+    "conversation_id": "coroksr5cfui11n4gql0", 
+    "text": "你好！很高兴和你交流。有什么我可以帮你的吗？"
 }
 ```
 
